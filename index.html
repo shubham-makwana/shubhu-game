@@ -1,0 +1,88 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Open Road Drive</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-screen canvas, translucent glass HUD, centered car-picker overlay. */
+:root{
+  --bg:#e9eef2; --fg:#16212b; --muted:#5d6b78; --accent:#e5603c; --glass:rgba(255,255,255,.62);
+  --line:rgba(22,33,43,.14); --card:#ffffff;
+  --display:'Fraunces',Georgia,serif; --body:'DM Sans',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141b;--fg:#e8eef3;--muted:#95a3b0;--accent:#ff8a5c;--glass:rgba(16,24,32,.62);--line:rgba(232,238,243,.16);--card:#17212b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141b;--fg:#e8eef3;--muted:#95a3b0;--accent:#ff8a5c;--glass:rgba(16,24,32,.62);--line:rgba(232,238,243,.16);--card:#17212b;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden;touch-action:none;user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;left:0;right:0;pointer-events:none;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+.top{top:env(safe-area-inset-top,0px);padding-block:14px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.bottom{bottom:env(safe-area-inset-bottom,0px);padding-block:14px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.glass{background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;padding:10px 14px;pointer-events:auto}
+.stat{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.clock{font-family:var(--display);font-size:28px;font-weight:500;line-height:1}
+.zone{font-size:13px;margin-top:4px}
+.speedo{text-align:right}
+.speedo b{font-family:var(--display);font-size:56px;font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
+.speedo span{font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:4px}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--fg);background:var(--glass);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);color:#fff;border-color:transparent;font-weight:700;padding:12px 22px;font-size:16px}
+input[type=range]{accent-color:var(--accent);width:150px;pointer-events:auto}
+label.tm{display:flex;flex-direction:column;gap:4px}
+.help{font-size:12px;color:var(--muted);max-width:260px;line-height:1.5}
+.help kbd{font-family:var(--mono);background:var(--card);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(180deg,rgba(10,16,24,.35),rgba(10,16,24,.7));overflow:auto;touch-action:auto}
+#menu .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;max-width:760px;width:100%}
+h1{font-family:var(--display);font-size:clamp(30px,6vw,46px);font-weight:700;margin:0 0 6px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 20px;max-width:56ch;line-height:1.5}
+.cars{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.car{display:flex;flex-direction:column;gap:3px;text-align:left;border-radius:12px;padding:12px;background:var(--bg)}
+.car[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.car strong{font-family:var(--display);font-size:17px}
+.car small{color:var(--muted);font-family:var(--mono);font-size:11px}
+.colors{display:flex;gap:8px;margin-bottom:20px;align-items:center;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;padding:0;border:2px solid var(--line)}
+.sw[aria-pressed=true]{border-color:var(--fg);transform:scale(1.12)}
+.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+@media (max-width:520px){.speedo b{font-size:42px}.help{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<canvas id="c" aria-label="Driving view"></canvas>
+
+<div class="hud top">
+  <div class="glass"><div class="clock" id="clock">12:00</div><div class="zone" id="zone">Countryside</div></div>
+  <div class="glass controls" id="topctl">
+    <label class="tm stat" for="tod">Time of day<input id="tod" type="range" min="0" max="24" step="0.05" value="10"></label>
+    <button id="auto" aria-pressed="true">Auto cycle: on</button>
+    <button id="camBtn">Camera</button>
+    <button id="menuBtn">Cars</button>
+  </div>
+</div>
+
+<div class="hud bottom">
+  <div class="glass help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to drive · <kbd>Space</kbd> brake · <kbd>H</kbd> headlights · <kbd>C</kbd> camera · <kbd>R</kbd> back to road</div>
+  <div class="glass speedo"><b id="spd">0</b><span>km/h</span><div class="stat" id="odo">0.0 km</div></div>
+</div>
+
+<div id="menu">
+  <div class="panel">
+    <h1>Open Road Drive</h1>
+    <p class="sub">An endless road through meadows, a glass-and-concrete city and snowy mountain passes. Leave the tarmac whenever you like. Pick a car and set off.</p>
+    <div class="cars" id="cars"></div>
+    <div class="colors" id="colors"><span class="stat">Paint</span></div>
+    <div class="row"><button class="primary" id="go">Start driving</button><span class="stat">Works with keyboard or touch</span></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/world.js"></script>
+<script src="js/cars.js"></script>
+<script src="js/sky.js"></script>
+<script src="js/main.js"></script>
+
+</body></html>
